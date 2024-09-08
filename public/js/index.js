@@ -19,6 +19,9 @@ Index.initializeAll = function () {
     // Bind events to DOM
     $(document).on("click.edit-header-1", "#edit-header-1", () => Index.promptCustomColumn(1));
     $(document).on("click.edit-header-2", "#edit-header-2", () => Index.promptCustomColumn(2));
+    $(document).on("click.edit-header-3", "#edit-header-3", () => Index.promptCustomColumn(3));
+    $(document).on("click.edit-header-4", "#edit-header-4", () => Index.promptCustomColumn(4));
+    $(document).on("click.edit-header-5", "#edit-header-5", () => Index.promptCustomColumn(5));
     $(document).on("click.mode-toggle", ".mode-toggle", Index.toggleMode);
     $(document).on("change.page-select", "#page-select", () => IndexTable.dataTable.page($("#page-select").val() - 1).draw("page"));
     $(document).on("change.thumbnail-crop", "#thumbnail-crop", Index.toggleCrop);
@@ -374,13 +377,22 @@ Index.updateCarousel = function (e) {
 Index.updateTableHeaders = function () {
     const cc1 = localStorage.customColumn1;
     const cc2 = localStorage.customColumn2;
+    const cc3 = localStorage.customColumn3;
+    const cc4 = localStorage.customColumn4;
+    const cc5 = localStorage.customColumn5;
 
     $("#customcol1").val(cc1);
     $("#customcol2").val(cc2);
+    $("#customcol3").val(cc3);
+    $("#customcol4").val(cc4);
+    $("#customcol5").val(cc5);
 
     // Modify text of <a> in headers
     $("#header-1").html(cc1.charAt(0).toUpperCase() + cc1.slice(1));
     $("#header-2").html(cc2.charAt(0).toUpperCase() + cc2.slice(1));
+    $("#header-3").html(cc3.charAt(0).toUpperCase() + cc3.slice(1));
+    $("#header-4").html(cc4.charAt(0).toUpperCase() + cc4.slice(1));
+    $("#header-5").html(cc5.charAt(0).toUpperCase() + cc5.slice(1));
 };
 
 /**
@@ -531,11 +543,15 @@ Index.loadContextMenuCategories = (catList, id) => Server.callAPI(`/api/archives
  * @returns
  */
 Index.handleContextMenu = function (option, id) {
-    switch (option) {
-    case "edit":
+    switch (true) {
+    case option.startsWith("rating"):
+        const rating = option.replace("rating-", "");
+        Server.callAPI(`/api/plugins/queue?plugin=rating&id=${id}&arg=${rating}`, "POST", `Added Rating ${rating} for ${id}!`, "Error while executing Script :", null);
+        break;
+    case option === "edit":
         LRR.openInNewTab(new LRR.apiURL(`/edit?id=${id}`));
         break;
-    case "delete":
+    case option === "delete":
         LRR.showPopUp({
             text: "Are you sure you want to delete this archive?",
             icon: "warning",
@@ -550,10 +566,10 @@ Index.handleContextMenu = function (option, id) {
             }
         });
         break;
-    case "read":
+    case option === "read":
         LRR.openInNewTab(new LRR.apiURL(`/reader?id=${id}`));
         break;
-    case "download":
+    case option === "download":
         LRR.openInNewTab(new LRR.apiURL(`/api/archives/${id}/download`));
         break;
     default:

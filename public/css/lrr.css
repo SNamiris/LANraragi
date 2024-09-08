@@ -29,9 +29,24 @@ td.custom2 {
   max-width: 100px;
 }
 
+#customheader3,
+td.custom3 {
+  max-width: 100px;
+}
+
+#customheader4,
+td.custom4 {
+  max-width: 100px;
+}
+
+#customheader5,
+td.custom5 {
+  max-width: 100px;
+}
+
 #tagsheader,
 td.tags {
-  max-width: 250px;
+  max-width: 600px;
 }
 
 .edit-header-btn {

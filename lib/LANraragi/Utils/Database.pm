@@ -435,9 +435,26 @@ sub set_tags ( $id, $newtags, $append = 0 ) {
 
         if ($oldtags) {
             $oldtags = trim($oldtags);
+            my @old_tags_array = split /,/, $oldtags;
+            my @new_tags_array = split /,/, $newtags;
 
-            if ( $oldtags ne "" ) {
-                $newtags = $oldtags . "," . $newtags;
+            # Check if any new tag starts with "Rating:"
+            my @rating_tags = grep { /^Rating:/ } @new_tags_array;
+
+            if (@rating_tags) {
+                # If there are rating tags, process them
+                foreach my $new_rating_tag (@rating_tags) {
+                    # Remove any old rating tag
+                    @old_tags_array = grep { !/^Rating:/ } @old_tags_array;
+                }
+                # Append new rating tags
+                push(@old_tags_array, @rating_tags);
+                $newtags = join(",", @old_tags_array);
+            } else {
+                # Append all new tags if no new rating tag
+                if ($oldtags ne "") {
+                    $newtags = $oldtags . "," . $newtags;
+                }
             }
         }
     }

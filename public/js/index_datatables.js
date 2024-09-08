@@ -72,6 +72,9 @@ IndexTable.initializeAll = function () {
             { data: null, className: "title itd", name: "title", render: IndexTable.renderTitle },
             { data: "tags", className: "custom1 itd", name: localStorage.customColumn1, render: (data, type) => IndexTable.renderColumn(localStorage.customColumn1, type, data) },
             { data: "tags", className: "custom2 itd", name: localStorage.customColumn2, render: (data, type) => IndexTable.renderColumn(localStorage.customColumn2, type, data) },
+            { data: "tags", className: "custom3 itd", name: localStorage.customColumn3, render: (data, type) => IndexTable.renderColumn(localStorage.customColumn3, type, data) },
+            { data: "tags", className: "custom4 itd", name: localStorage.customColumn4, render: (data, type) => IndexTable.renderColumn(localStorage.customColumn4, type, data) },
+            { data: "tags", className: "custom5 itd", name: localStorage.customColumn5, render: (data, type) => IndexTable.renderColumn(localStorage.customColumn5, type, data) },
             { data: "tags", className: "tags itd", name: "tags", orderable: false, render: IndexTable.renderTags },
         ],
     });
@@ -271,6 +274,12 @@ IndexTable.drawCallback = function () {
             // eslint-disable-next-line eqeqeq
         } else if (currentSort == 2) {
             currentSort = localStorage.customColumn2;
+        } else if (currentSort == 3) {
+            currentSort = localStorage.customColumn3;
+        } else if (currentSort == 4) {
+            currentSort = localStorage.customColumn4;
+        } else if (currentSort == 5) {
+            currentSort = localStorage.customColumn5;
         } else {
             currentSort = "title";
         }

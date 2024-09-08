@@ -167,6 +167,21 @@
 								title="Edit this column"></i>
 							<a id="header-2">Series</a>
 						</th>
+						<th id="customheader3">
+							<i id="edit-header-3" class="fas fa-pencil-alt edit-header-btn"
+								title="Edit this column"></i>
+							<a id="header-3">customheader3</a>
+						</th>
+						<th id="customheader4">
+							<i id="edit-header-4" class="fas fa-pencil-alt edit-header-btn"
+								title="Edit this column"></i>
+							<a id="header-4">customheader4</a>
+						</th>
+						<th id="customheader5">
+							<i id="edit-header-5" class="fas fa-pencil-alt edit-header-btn"
+								title="Edit this column"></i>
+							<a id="header-5">customheader5</a>
+						</th>
 						<th id="tagsheader">
 							<a>Tags</a>
 						</th>
@@ -237,6 +252,22 @@
 								"name": "Add to Category",
 								"icon": "fas fa-search-plus",
 								"items": Index.loadContextMenuCategories(catList, $trigger.attr("id"))
+							},
+							"rating": {
+								"name": "Add Rating",
+								"icon": "fas fa-search-plus",
+								"items": {
+									"rating-10": { "name": "★★★★★" },
+									"rating-9": { "name": "★★★★☆" },
+									"rating-8": { "name": "★★★★"},
+									"rating-7": { "name": "★★★☆" },
+									"rating-6": { "name": "★★★", },
+									"rating-5": { "name": "★★☆" },
+									"rating-4": { "name": "★★" },
+									"rating-3": { "name": "★☆"},
+									"rating-2": { "name": "★"},
+									"rating-1": { "name": "☆" },
+								}
 							}
 							[% END %]
 						}
