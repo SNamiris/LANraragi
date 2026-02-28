@@ -709,32 +709,32 @@ Index.loadContextMenuCategories = (catList, id) => Server.callAPI(`/api/archives
 Index.loadContextMenuRatings = (id) => Server.callAPI(`/api/archives/${id}/metadata`, "GET", null, I18N.IndexIdLoadError(id),
     (data) => {
         const items = {};
-        const ratings = [{
-            name: I18N.IndexRemoveRating
-        }, {
-            name: "⭐",
-        }, {
-            name: "⭐⭐",
-        }, {
-            name: "⭐⭐⭐",
-        }, {
-            name: "⭐⭐⭐⭐",
-        }, {
-            name: "⭐⭐⭐⭐⭐",
-        }];
+        const ratings = [
+            { name: I18N.IndexRemoveRating, value: null },
+            { name: "☆",     value: "1" },
+            { name: "★",     value: "2" },
+            { name: "★☆",   value: "3" },
+            { name: "★★",   value: "4" },
+            { name: "★★☆", value: "5" },
+            { name: "★★★", value: "6" },
+            { name: "★★★☆", value: "7" },
+            { name: "★★★★", value: "8" },
+            { name: "★★★★☆", value: "9" },
+            { name: "★★★★★", value: "10" },
+        ];
         const tags = LRR.splitTagsByNamespace(data.tags);
         const hasRating = Object.keys(tags).some(x => x === "rating");
-        const ratingValue = hasRating ? tags["rating"] : [0];
+        const ratingValue = hasRating ? tags["rating"] : [null];
 
         for (let i = 0; i < ratings.length; i++) {
             items[i] = ratings[i];
             items[i].type = "checkbox";
 
-            if (items[i].name === ratingValue[0]) { items[i].selected = true; }
+            if (ratings[i].value === ratingValue[0]) { items[i].selected = true; }
             items[i].events = {
                 click() {
                     if (i === 0) delete tags["rating"];
-                    else tags["rating"] = [ratings[i].name];
+                    else tags["rating"] = [ratings[i].value];
 
                     Server.updateTagsFromArchive(id, LRR.buildTagList(tags));
 
