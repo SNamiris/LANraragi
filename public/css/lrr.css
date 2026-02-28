@@ -63,6 +63,18 @@ div.id3 img {
   max-height: 275px;
 }
 
+.thumb-rating {
+  position: absolute;
+  bottom: 4px;
+  right: 6px;
+  color: #fdcc0d;
+  font-size: 13px;
+  line-height: 1;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  pointer-events: none;
+  z-index: 5;
+}
+
 div.id3.nocrop img {
   max-width: 95%;
 }

@@ -326,6 +326,7 @@ LRR.buildThumbnailDiv = function (data, tagTooltip = true) {
                                 onerror="this.src='${new LRR.apiURL("/img/noThumb.png")}'"/>
                     </a>
                     ${bookmarkIcon}
+                    ${LRR.buildRatingDiv(data.tags)}
                 </div>
                 <div class="id4">
                         ${LRR.buildPageCountDiv(data)}
@@ -351,6 +352,17 @@ LRR.buildStatusDiv = function (arcdata) {
     }
     // If there wasn't sufficient data, return an empty string
     return "";
+};
+
+LRR.buildRatingDiv = function (tags) {
+    if (!tags) return "";
+    const match = tags.match(/\brating:(\d+)/i);
+    if (!match) return "";
+    const val = parseInt(match[1], 10);
+    if (val < 1 || val > 10) return "";
+    const filled = Math.floor(val / 2);
+    const half = val % 2;
+    return `<div class="thumb-rating">${"★".repeat(filled)}${"☆".repeat(half)}</div>`;
 };
 
 LRR.buildPageCountDiv = function (arcdata) {
