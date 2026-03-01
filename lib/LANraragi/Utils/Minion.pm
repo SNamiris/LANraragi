@@ -374,6 +374,9 @@ sub add_tasks {
                 # Check if the plugin provided a direct file path instead of a URL to download
                 if ( exists $plugin_result->{file_path} ) {
                     my $tempfile = $plugin_result->{file_path};
+                    if ( IS_UNIX ) {
+                        $tempfile = decode_utf8( $tempfile );
+                    }
                     $logger->info("Plugin directly provided file at: $tempfile");
 
                     # Add the url as a source: tag
@@ -407,6 +410,9 @@ sub add_tasks {
             # Download the URL
             eval {
                 my $tempfile = LANraragi::Model::Upload::download_url( $url, $ua );
+                if ( IS_UNIX ) {
+                    $tempfile = decode_utf8( $tempfile );
+                }
                 $logger->info("URL downloaded to $tempfile");
 
                 # Add the url as a source: tag
