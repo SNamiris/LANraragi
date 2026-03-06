@@ -786,6 +786,20 @@ Index.handleContextMenu = function (option, id) {
             Index.pseudoCopyBtn.attr("data-clipboard-text", `${window.location.origin}${new LRR.apiURL(`/reader?id=${id}`).toString()}`);
             Index.pseudoCopyBtn.click()
             break;
+        case "source":
+            Server.callAPI(`/api/archives/${id}/metadata`, "GET", null, I18N.IndexIdLoadError(id),
+                (data) => {
+                    const tags = LRR.splitTagsByNamespace(data.tags);
+                    if (tags.source && tags.source.length > 0) {
+                        let url = tags.source[0];
+                        if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+                        LRR.openInNewTab(url);
+                    } else {
+                        LRR.toast({ heading: I18N.IndexNoSource, icon: "error", hideAfter: 3000 });
+                    }
+                },
+            );
+            break;
         default:
             break;
     }

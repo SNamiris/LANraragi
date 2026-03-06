@@ -226,6 +226,7 @@
 							"read": { name: "[% c.lh('Read') %]", icon: "fas fa-book" },
 							"download": { name: "[% c.lh('Download') %]", icon: "fas fa-save" },
 							"copy link": { name: "[% c.lh('Copy link') %]", icon: "fas fa-link" },
+							"source": { name: "[% c.lh('Open Source') %]", icon: "fas fa-external-link-alt" },
 							[% IF userlogged %]
 							"sep1": "---------",
 							"edit": { name: "[% c.lh('Edit Metadata') %]", icon: "fas fa-pencil-alt" },
