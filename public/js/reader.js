@@ -107,23 +107,6 @@ Reader.initializeAll = function () {
                 .addClass("far fa-bookmark");
         }
     });
-    $(document).on("click.set-rating", "#set-rating", () => {
-        let tags = LRR.splitTagsByNamespace(Reader.content.tags);
-        let selectedRating = $("#rating").val();
-        if (selectedRating === "") { return };
-        tags.rating = [selectedRating];
-        let tagList = LRR.buildTagList(tags);
-        Server.updateTagsFromArchive(Reader.id, tagList);
-        $("#tagContainer > table").replaceWith(LRR.buildTagsDiv(tagList.join(",")));
-    });
-    $(document).on("click.clear-rating", "#clear-rating", () => {
-        let tags = LRR.splitTagsByNamespace(Reader.content.tags);
-        delete tags.rating;
-        let tagList = LRR.buildTagList(tags);
-        Server.updateTagsFromArchive(Reader.id, tagList);
-        document.querySelector("#rating").selectedIndex = 0;
-        $("#tagContainer > table").replaceWith(LRR.buildTagsDiv(tagList.join(",")));
-    });
 
     $(document).on("click.add-toc", ".add-toc", (e) => { 
         const page = +$(e.target).closest("div[page]").attr("page") + 1; 
@@ -150,6 +133,7 @@ Reader.initializeAll = function () {
         Reader.goToPage(pageNumber);
     });
 
+    
     // Apply full-screen utility
     // F11 Fullscreen is totally another "Fullscreen", so its support is beyong consideration.
     // Small override function, always returns boolean
@@ -193,6 +177,36 @@ Reader.initializeAll = function () {
         }
 
         $("#tagContainer").append(LRR.buildTagsDiv(Reader.content.tags));
+
+        const ratyEl = document.querySelector('[data-raty]');
+        if (ratyEl) {
+            const rating = LRR.splitTagsByNamespace(Reader.content.tags).rating?.at(0).length;
+            new Raty(ratyEl, {
+                starType: 'i',
+                cancelButton: true,
+                cancelClass: 'fas fa-trash raty-cancel',
+                cancelHint: I18N.ReaderClearRating,
+                cancelPlace: 'right',
+                score: rating,
+                click: function(score, element, evt) {
+
+                    let tags = LRR.splitTagsByNamespace(Reader.content.tags);
+                    let selectedRating = score;
+
+                    if (selectedRating === null)
+                        delete tags.rating;
+                    else {
+                        // Create a tag with star emoji corresponding to the rating (e.g. rating:⭐⭐⭐ for a 3-star rating)
+                        selectedRating = "⭐".repeat(score);
+                        tags.rating = [selectedRating];
+                    }
+
+                    let tagList = LRR.buildTagList(tags);
+                    Server.updateTagsFromArchive(Reader.id, tagList);
+                    $("#tagContainer > table").replaceWith(LRR.buildTagsDiv(tagList.join(",")));
+                }
+            }).init();
+        }
 
         $("#tagContainer").append(`<div class="archive-summary"/>`);
         $(".archive-summary").text(Reader.content.summary);
@@ -284,11 +298,16 @@ Reader.addTocSection = function (page, currentTitle = null) {
         showCancelButton: true,
         reverseButtons: true,
     }).then((result) => {
-        Reader.toggleArchiveOverlay();
         if (result.isConfirmed && result.value.trim() !== "") {
-            Server.callAPI(`/api/archives/${Reader.id}/toc?page=${page}&title=${result.value}`, "PUT", "Chapter added!", I18N.ReaderTocError, 
-                () => Reader.loadContentData().then(() => Reader.updateArchiveOverlay(true))
+            Server.callAPI(`/api/archives/${Reader.id}/toc?page=${page}&title=${result.value}`, "PUT", "Chapter added!", I18N.ReaderTocError,
+                () => Reader.loadContentData().then(() => {
+                    Reader.updateArchiveOverlay(true);
+                    Reader.toggleArchiveOverlay();
+                    Reader.goToPage(page);
+                })
             );
+        } else {
+            Reader.toggleArchiveOverlay();
         }
     });
 }
@@ -305,12 +324,16 @@ Reader.removeTocSection = function () {
         reverseButtons: true,
         confirmButtonColor: "#d33",
     }).then((result) => {
-        Reader.toggleArchiveOverlay();
         if (result.isConfirmed) {
-            let page = Reader.currentChapter.startPage; 
-            Server.callAPI(`/api/archives/${Reader.id}/toc?page=${page}`, "DELETE", "Chapter removed!", I18N.ReaderTocError, 
-                () => Reader.loadContentData().then(() => Reader.updateArchiveOverlay(true))
+            let page = Reader.currentChapter.startPage;
+            Server.callAPI(`/api/archives/${Reader.id}/toc?page=${page}`, "DELETE", "Chapter removed!", I18N.ReaderTocError,
+                () => Reader.loadContentData().then(() => {
+                    Reader.updateArchiveOverlay(true);
+                    Reader.toggleArchiveOverlay();
+                })
             );
+        } else {
+            Reader.toggleArchiveOverlay();
         }
     });
 }
@@ -751,12 +774,10 @@ Reader.loadBookmarkStatus = function () {
 
 Reader.updateMetadata = function () {
     const img = $("#img")[0];
-    const imageUrl = new URL(img.src);
-    const filename = imageUrl.searchParams.get("path");
+    const filename = img.dataset.filename;
 
     const imgDoublePage = $("#img_doublepage")[0];
-    const imageUrlDoublePage = new URL(imgDoublePage.src);
-    const filenameDoublePage = imageUrlDoublePage.searchParams.get("path");
+    const filenameDoublePage = imgDoublePage.dataset.filename;
 
     if (!filename && Reader.showingSinglePage) {
         Reader.currentPageLoaded = true;
@@ -807,7 +828,7 @@ Reader.updateMetadata = function () {
     $("#i3").removeClass("loading");
 };
 
-Reader.goToPage = function (page) {
+Reader.goToPage = async function (page) {
     Reader.previousPage = Reader.currentPage;
     Reader.currentPage = Math.min(Reader.maxPage, Math.max(0, +page));
     Reader.showingSinglePage = false;
@@ -816,31 +837,42 @@ Reader.goToPage = function (page) {
         $("#display img").get(Reader.currentPage).scrollIntoView({ block: "nearest" });
     } else {
         $("#img_doublepage").attr("src", "");
+        $("#img_doublepage").attr("data-filename", "");
         $("#display").removeClass("double-mode");
         if (Reader.doublePageMode && Reader.currentPage > 0
             && Reader.currentPage < Reader.maxPage) {
             // Composite an image and use that as the source
-            const img1 = Reader.loadImage(Reader.currentPage);
-            const img2 = Reader.loadImage(Reader.currentPage + 1);
+            const img1 = await Reader.loadImage(Reader.currentPage);
+            const img1Filename = Reader.getFilename(Reader.currentPage);
+            const img2 = await Reader.loadImage(Reader.currentPage + 1);
+            const img2Filename = Reader.getFilename(Reader.currentPage + 1);
             // If w > h on one of the images(widespread), set canvasdata to the first image only
             if (img1.naturalWidth > img1.naturalHeight || img2.naturalWidth > img2.naturalHeight) {
                 // Depending on whether we were going forward or backward, display img1 or img2
-                const wideSrc = Reader.previousPage > Reader.currentPage ? img2.src : img1.src;
+                const wideSrc = Reader.previousPage > Reader.currentPage ? img2 : img1;
+                const wideFilename = Reader.previousPage > Reader.currentPage ? img2Filename : img1Filename;
                 $("#img").attr("src", wideSrc);
+                $("#img").attr("data-filename", wideFilename);
                 Reader.showingSinglePage = true;
             } else {
                 if (Reader.mangaMode) {
-                    $("#img").attr("src", img2.src);
-                    $("#img_doublepage").attr("src", img1.src);
+                    $("#img").attr("src", img2);
+                    $("#img").attr("data-filename", img2Filename);
+                    $("#img_doublepage").attr("src", img1);
+                    $("#img_doublepage").attr("data-filename", img1Filename);
                 } else {
-                    $("#img").attr("src", img1.src);
-                    $("#img_doublepage").attr("src", img2.src);
+                    $("#img").attr("src", img1);
+                    $("#img").attr("data-filename", img1Filename);
+                    $("#img_doublepage").attr("src", img2);
+                    $("#img_doublepage").attr("data-filename", img2Filename);
                 }
                 $("#display").addClass("double-mode");
             }
         } else {
-            const img = Reader.loadImage(Reader.currentPage);
-            $("#img").attr("src", img.src);
+            const img = await Reader.loadImage(Reader.currentPage);
+            const imgFilename = Reader.getFilename(Reader.currentPage);
+            $("#img").attr("src", img);
+            $("#img").attr("data-filename", imgFilename);
             Reader.showingSinglePage = true;
         }
 
@@ -891,19 +923,14 @@ Reader.preloadImages = function () {
     }
 };
 
-Reader.loadImage = function (index) {
+Reader.loadImage = async function (index) {
     const src = Reader.pages[index];
 
     if (!Reader.preloadedImg[src]) {
-        const img = new Image();
-        img.src = src;
-        Reader.preloadedImg[src] = img;
-        if (!Reader.preloadedSizes[index]) {
-            LRR.getImgSizeAsync(src).done((data, textStatus, request) => {
-                const size = parseInt(request.getResponseHeader("Content-Length") / 1024, 10);
-                Reader.preloadedSizes[index] = size;
-            });
-        }
+        const res = await fetch(src);
+        Reader.preloadedSizes[index] = parseInt(res.headers.get("Content-Length") / 1024, 10);
+        const blob = await res.blob();
+        Reader.preloadedImg[src] = URL.createObjectURL(blob);
     }
 
     return Reader.preloadedImg[src];
@@ -1093,8 +1120,8 @@ Reader.toggleArchiveOverlay = function () {
 Reader.toggleFullScreen = function () {
     if (window.fscreen.inFullscreen()) {
         // if already full screen; exit
-        window.fscreen.exitFullscreen();
-        Reader.handleFullScreen();
+        window.fscreen.exitFullscreen().then(() =>
+            Reader.handleFullScreen());
     } else {
         // else go fullscreen
         Reader.handleFullScreen(true);
@@ -1315,3 +1342,7 @@ Reader.handlePaginator = function () {
             break;
     }
 };
+
+Reader.getFilename = function(index) {
+    return new URLSearchParams(Reader.pages[index].split("?")[1]).get("path");
+}
